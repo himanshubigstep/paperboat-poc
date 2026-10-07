@@ -29,6 +29,11 @@ Source: first real Blinkit test scrape (2026-09-29, 91 rows). Data reaches the f
 
 Added in P1.4 (search): `keyword`, `rank`, `is_sponsored` (bool), per keyword × location × capture.
 
+## What the frontend needs from the backend (D-012)
+- **Every capture, not only the latest.** `GET /snapshots` returns one record per product × store × capture (3 a day), each with `scraped_at` and `capture_id`. The UI computes **discount** `(mrp − selling_price) / mrp` and **units sold** (stock drop between consecutive captures of the same listing; a rise = restock) itself — see `frontend/src/lib/metrics.ts`. If the backend later computes them, expose the same definitions.
+- `platform` is an id (`blinkit`, `zepto`, …) and `city` a plain name (`Delhi`, `Mumbai`) on every record, so more platforms/cities need no screen changes. Use `Delhi` (not `New Delhi`) in `city`.
+- Not-listed products arrive with null price/MRP/name; keep them (they drive the "not listed" state).
+
 ## Planned endpoints (`/api/v1`)
 All accept `city`, `store_id|pincode`, `product_id`, `keyword`, `from`, `to`.
 - `GET /locations` — stores/pincodes per city

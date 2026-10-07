@@ -15,6 +15,23 @@ export const palette = {
 export const series = [palette.violet, palette.lime, palette.coral, palette.sky, palette.sunset, palette.mint, palette.pink, palette.slate];
 export const cityColor = { Delhi: palette.violet, Mumbai: palette.sunset } as const;
 
+/** Stable colour per series name: known cities / platforms keep their colour everywhere, others cycle. */
+const FIXED: Record<string, string> = {
+  Delhi: palette.violet, Mumbai: palette.sunset, Bengaluru: palette.sky, Hyderabad: palette.pink, Chennai: palette.mint,
+  Blinkit: '#F8CB46', Zepto: palette.violet, 'Swiggy Instamart': palette.sunset, BigBasket: palette.sky, 'Flipkart Minutes': palette.mint,
+  'Amazon Now': palette.pink, JioMart: palette.coral, DMart: palette.slate, FirstClub: palette.lime,
+  Buyable: palette.mint, 'Out of stock': palette.coral, 'Not listed': palette.slate, Units: palette.violet, Revenue: palette.lime,
+  'Paper Boat': palette.violet,
+};
+export function colorFor(name: string, index = 0) {
+  return FIXED[name] ?? series[index % series.length];
+}
+export function colorScale(domain: string[]) {
+  let i = 0;
+  const range = domain.map((d) => (FIXED[d] ? FIXED[d] : series[i++ % series.length]));
+  return { domain, range };
+}
+
 const font = 'var(--font-body), "Plus Jakarta Sans", system-ui, sans-serif';
 
 const common: ThemeConfig['token'] = {

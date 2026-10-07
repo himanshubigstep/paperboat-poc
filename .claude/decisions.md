@@ -31,3 +31,15 @@ Append new entries at the bottom. Status: Accepted | Proposed | Superseded.
 
 ## D-010 — AI layer ownership and approach
 **Accepted.** Gajendra Sharma owns `ai-layer/`. Assistant uses function calling over read-only tools (no vector DB); recommendations are rule-based, the LLM only phrases explanations. Hosting (separate service vs router in backend) — **open**, decide with Jeetpal in W1.
+
+## D-011 — Full reference-site coverage, multi-platform/multi-city by design
+**Accepted.** The frontend covers every page of the reference product (Home, Dashboards with 11 tabs, Signals, Assistant, Inbox, Workflow Monitoring, Data & Datasets, Reports, Content & Listing Health, Ratings & Reviews, Alerts, Catalogue Matching, Value & Outcomes) plus Products, Stock & Sell-out, Recommendations. Same sections as the reference, our own design. Platform and city are global filters (`?platform=blinkit&city=Delhi,Mumbai`); only Blinkit/Delhi/Mumbai are connected, others show as "soon". No screen hard-codes a platform or city.
+
+## D-012 — Discount and units sold are always calculated
+**Accepted.** Discount % = (MRP − selling price) ÷ MRP, never read from the feed. Units sold = stock drop between two consecutive captures of the same listing ordered by `scraped_at`; a stock rise is a restock and is excluded. Result is a lower-bound estimate, always labelled "Estimate". Code: `frontend/src/lib/metrics.ts`. The backend must therefore return every capture (3/day) per listing, not only the latest.
+
+## D-013 — Real vs sample data on screens
+**Accepted.** Capture-derived numbers (availability, price, discount, stock, sell-out, signals) are real. Everything the capture cannot prove (search rank, competitors, ratings, media, forecast, workflows, feeds…) is sample data, marked with a "Sample data" chip, shaped like the reference product's data, and anchored to real SKUs/stores where possible.
+
+## D-014 — Dummy history for the sell-out demo
+**Accepted (temporary).** The 91-row Blinkit test scrape (2026-09-29) is the latest capture of each listing; 40 earlier captures per listing are synthesised (seeded) in `frontend/src/mock/snapshots.ts` so the sell-out maths can be shown. Removed when `GET /snapshots` is live.

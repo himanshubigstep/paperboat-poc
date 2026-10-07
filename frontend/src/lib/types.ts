@@ -1,89 +1,90 @@
-export type City = 'Delhi' | 'Mumbai';
-export type CityFilter = City | 'Both';
 export type Availability = 'available' | 'out_of_stock' | 'not_listed';
 export type Severity = 'critical' | 'high' | 'medium' | 'low';
-export type KeywordType = 'brand_self' | 'category' | 'occasion' | 'competitor_brand';
 
-export interface Meta {
-  platform: 'Blinkit';
-  captured_at: string; // ISO, UTC
-  captures_per_day: number;
-  cities: City[];
-  products: number;
-  keywords: number;
-  stores: Record<City, number>;
-  pincodes: Record<City, string>;
-  runs_24h: { ok: number; failed: number; blocked: number };
+export interface PlatformInfo {
+  id: string; // 'blinkit'
+  label: string; // 'Blinkit'
+  connected: boolean; // false = shown in filters as "soon", no data yet
+  color: string;
+}
+export interface CityInfo {
+  id: string; // 'Delhi'
+  label: string;
+  connected: boolean;
+  stores: number; // dark stores on the network (dummy for not-yet-observed)
 }
 
-export interface Product {
+/** One row of the backend `listing_snapshots` table: product x store x capture. */
+export interface Snapshot {
+  platform: string; // platform id
+  city: string;
+  pincode: string;
+  store_id: string | null;
   product_id: string;
   name: string;
-  line: string;
+  brand: string;
   pack_size: string;
   category: string;
-  shelf_life_days: number;
-  marketer: string;
-}
-
-/** One row per product x city (latest capture) */
-export interface Listing {
-  key: string;
-  product_id: string;
-  name: string;
-  line: string;
-  pack_size: string;
-  category: string;
-  city: City;
-  store_id: string;
-  mrp: number;
-  selling_price: number;
-  discount_pct: number;
+  line: string; // derived product line (Swing, Zero, Nata De Coco …)
+  mrp: number | null;
+  selling_price: number | null;
   availability: Availability;
   stock: number;
-  est_units_7d: number; // estimate
-  best_rank: number | null;
-  scraped_at: string;
+  shelf_life: string;
+  shelf_life_days: number | null;
+  marketer: string;
+  store_name: string | null;
+  store_address: string | null;
   url: string;
+  scraped_at: string; // ISO UTC — drives every "sold" calculation
+  capture_id: string; // '2026-09-29-S2' (date + slot, 3 slots a day)
 }
 
-export interface DayPoint {
-  date: string;
-  city: City;
-  value: number;
+/** What changed for one listing between two consecutive captures. */
+export interface SelloutInterval {
+  key: string; // platform|city|store|product
+  platform: string;
+  city: string;
+  product_id: string;
+  name: string;
+  pack_size: string;
+  line: string;
+  category: string;
+  from: string; // previous scraped_at
+  to: string; // this scraped_at
+  capture_id: string; // capture the interval ends at
+  day: string; // IST date of `to`
+  stock_from: number;
+  stock_to: number;
+  units: number; // ESTIMATED units sold = max(0, stock_from - stock_to)
+  restocked: number; // stock increase (restock) — never counted as sales
+  price: number; // selling price at `to`
+  revenue: number; // units * price (ESTIMATE)
+  hours: number; // gap between the two captures
+  oos: boolean; // out of stock at both ends: demand unobservable
 }
 
 export interface Signal {
   id: string;
   severity: Severity;
-  type: 'availability' | 'price' | 'search' | 'sellout' | 'quality';
+  type: string;
   title: string;
   detail: string;
-  city: City | 'Both';
+  platform: string;
+  city: string;
   product?: string;
   metric: string;
   delta: string;
-  confidence: number; // 0-100
+  confidence: number;
   detected_at: string;
   rule: string;
-  free_or_paid: 'free' | 'paid';
 }
 
-export interface Recommendation {
-  id: string;
-  priority: number; // 0-100
-  city: City | 'Both';
-  product: string;
-  action: string;
-  why: string;
-  type: 'free' | 'paid';
-  evidence: { label: string; query_id: string }[];
-  status: 'new' | 'reviewing' | 'done';
-}
-
-export interface ChatTurn {
-  role: 'user' | 'assistant';
-  text: string;
-  citations?: { label: string; query_id: string }[];
-  estimate?: boolean;
+export interface Meta {
+  captured_at: string;
+  captures_per_day: number;
+  capture_count: number;
+  first_capture_at: string;
+  listings: number;
+  products: number;
 }

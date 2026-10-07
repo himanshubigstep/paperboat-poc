@@ -3,7 +3,10 @@
 import { Alert, Button, Empty, Result, Tag } from 'antd';
 import { ReloadOutlined } from '@ant-design/icons';
 import type { ReactNode } from 'react';
-import type { Availability, City, Severity } from '@/lib/types';
+import { Tabs } from 'antd';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { platformColor, platformLabel } from '@/lib/config';
+import type { Availability, Severity } from '@/lib/types';
 
 export const fmtINR = (n: number) => `₹${n.toLocaleString('en-IN', { maximumFractionDigits: 1 })}`;
 export const fmtNum = (n: number) => n.toLocaleString('en-IN');
@@ -34,9 +37,10 @@ export function Section({ title, sub, link }: { title: string; sub?: ReactNode; 
   );
 }
 
-export function Prov({ children }: { children: ReactNode }) {
+/** Provenance chip. kind="real" = derived from captured shelf data; kind="sample" = placeholder data for a feed not connected yet. */
+export function Prov({ children, kind = 'real' }: { children: ReactNode; kind?: 'real' | 'sample' }) {
   return (
-    <span className="prov">
+    <span className={`prov ${kind === 'sample' ? 'sample' : ''}`}>
       <i />
       {children}
     </span>
@@ -111,8 +115,55 @@ export function SevTag({ v }: { v: Severity }) {
   return <Tag color={map[v][0]} bordered={false}>{map[v][1]}</Tag>;
 }
 
-export function CityTag({ city }: { city: City | 'Both' }) {
-  return <Tag color={city === 'Delhi' ? 'purple' : city === 'Mumbai' ? 'orange' : 'geekblue'} bordered={false}>{city === 'Both' ? 'Delhi + Mumbai' : city}</Tag>;
+const CITY_TAG: Record<string, string> = { Delhi: 'purple', Mumbai: 'orange', Bengaluru: 'cyan', Hyderabad: 'magenta', Chennai: 'green' };
+export function CityTag({ city }: { city: string }) {
+  return <Tag color={CITY_TAG[city] ?? 'geekblue'} bordered={false}>{city}</Tag>;
+}
+
+export function PlatformTag({ id }: { id: string }) {
+  return (
+    <Tag bordered={false} style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+      <i style={{ width: 8, height: 8, borderRadius: 8, background: platformColor(id), display: 'inline-block' }} />
+      {platformLabel(id)}
+    </Tag>
+  );
+}
+
+/** "Paper Boat Swing Lively Orange Juice" -> "Swing Lively Orange Juice" */
+export const shortName = (n: string) => n.replace(/^paper boat\s+/i, '');
+
+/** Tabs whose active key lives in the URL (?tab=sales) so a tab can be linked to and survives refresh. */
+export function UrlTabs({ items, param = 'tab', defaultKey }: { items: { key: string; label: ReactNode; children: ReactNode }[]; param?: string; defaultKey?: string }) {
+  const sp = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
+  const fallback = defaultKey ?? items[0].key;
+  const cur = sp.get(param);
+  const active = items.some((i) => i.key === cur) ? (cur as string) : fallback;
+  return (
+    <Tabs
+      activeKey={active}
+      destroyInactiveTabPane
+      onChange={(k) => {
+        const n = new URLSearchParams(sp.toString());
+        if (k === fallback) n.delete(param);
+        else n.set(param, k);
+        router.replace(`${pathname}${n.toString() ? `?${n}` : ''}`, { scroll: false });
+      }}
+      items={items}
+    />
+  );
+}
+
+/** Small banner for screens whose numbers are placeholders because the feed is not connected yet. */
+export function SampleNote({ children }: { children?: ReactNode }) {
+  return <Alert type="info" showIcon style={{ marginBottom: 16, borderRadius: 14 }} message={children ?? 'Sample data — this feed is not connected yet. Layout and calculations are real; numbers are placeholders.'} />;
+}
+
+export function Delta({ v, suffix = '', goodWhenUp = true }: { v: number; suffix?: string; goodWhenUp?: boolean }) {
+  if (!v) return <span className="muted">—</span>;
+  const good = (v > 0) === goodWhenUp;
+  return <span className={good ? 'delta-up' : 'delta-down'}>{v > 0 ? '▲' : '▼'} {Math.abs(v)}{suffix}</span>;
 }
 
 export function PaidTag({ type }: { type: 'free' | 'paid' }) {

@@ -128,6 +128,7 @@ a { color: inherit; text-decoration: none; }
 
 .heat { text-align: center; font-weight: 600; font-size: 12.5px; border-radius: 8px; padding: 6px 0; font-variant-numeric: tabular-nums; }
 .prov { display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px; font-weight: 600; padding: 3px 10px; border-radius: 999px; background: var(--raised); color: var(--ink-2); }
+.prov.sample i { background: var(--pb-sunset); box-shadow: 0 0 0 3px rgba(255, 159, 67, 0.25); }
 .prov i { width: 6px; height: 6px; border-radius: 50%; background: var(--pb-mint); box-shadow: 0 0 0 3px rgba(45, 225, 194, 0.25); }
 
 .chat-bubble { max-width: 760px; padding: 12px 16px; border-radius: 18px; line-height: 1.55; }

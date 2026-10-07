@@ -34,7 +34,7 @@ Replicate the reference site's look/structure, restricted to POC scope.
 7. **Recommendations + Assistant (P3.6).**
 8. **Live data + states (P3.7):** loading/empty/error, visible capture timestamp.
 
-Sidebar items for the POC (reference has 13; we keep 8): Overview, Dashboards, Products, Signals & Insights, Ask the Assistant, Data & Datasets, Reports, Settings/Help (stub). Dropped: Content & Listing Health, Ratings & Reviews, Catalogue Matching, Value & Outcomes, Alerts & Subscriptions, Inbox, Workflow Monitoring (out of POC scope; may return in Part B).
+Sidebar (updated, D-011): all reference pages are built — Monitor: Overview, Dashboards (11 tabs), Products, Stock & Sell-out · Insight: Signals & Insights, Recommendations, Ask the Assistant, Inbox, Alerts & Subscriptions · Quality: Content & Listing Health, Ratings & Reviews, Catalogue Matching · Operate: Workflow Monitoring, Data & Datasets, Reports Center, Value & Outcomes · Settings, Help. Pages that need feeds not connected in the POC run on clearly-marked sample data.
 
 Definition of done: all screens live on captured data; a known stock-out in the data shows correctly; ranking/price figures reconcile with underlying records.
 

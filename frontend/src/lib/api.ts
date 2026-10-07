@@ -1,50 +1,48 @@
 /**
- * Data access. Everything the UI shows goes through here so the swap from dummy data
- * to the backend (`NEXT_PUBLIC_API_BASE_URL`, see .claude/rules/data-contract.md) is one file.
+ * Data access. UI → hooks → here. Swap dummy → backend by setting NEXT_PUBLIC_USE_MOCK=false and
+ * NEXT_PUBLIC_API_BASE_URL (see ../../.claude/rules/data-contract.md). The backend returns
+ * `{ data, meta }`; three captures a day, one `Snapshot` per product x store x capture.
  */
-import * as m from '@/mock/data';
-import type { CityFilter } from '@/lib/types';
+import { getSnapshots } from '@/mock/snapshots';
+import type { Meta, Snapshot } from '@/lib/types';
 
-const USE_MOCK = process.env.NEXT_PUBLIC_USE_MOCK !== 'false';
-const BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:8000/api/v1';
+export const USE_MOCK = process.env.NEXT_PUBLIC_USE_MOCK !== 'false';
+export const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:8000/api/v1';
 
-async function get<T>(path: string, mock: () => T): Promise<T> {
+const wait = (ms = 200) => new Promise((r) => setTimeout(r, ms));
+
+export async function get<T>(path: string, mock: () => T | Promise<T>): Promise<T> {
   if (USE_MOCK) {
-    await new Promise((r) => setTimeout(r, 180)); // feel like a network call
+    await wait();
     return mock();
   }
-  const res = await fetch(`${BASE}${path}`);
+  const res = await fetch(`${API_BASE}${path}`);
   if (!res.ok) throw new Error(`API ${res.status} on ${path}`);
-  const body = await res.json();
-  return body.data as T;
+  return (await res.json()).data as T;
 }
 
-const inCity = <T extends { city: string }>(rows: T[], city: CityFilter) => (city === 'Both' ? rows : rows.filter((r) => r.city === city));
+export interface Dataset {
+  snapshots: Snapshot[];
+  meta: Meta;
+}
 
 export const api = {
-  meta: () => get('/summary', () => m.meta),
-  listings: (city: CityFilter) => get(`/products?city=${city}`, () => inCity(m.listings, city)),
-  availability: (city: CityFilter) =>
-    get(`/availability?city=${city}`, () => ({
-      states: m.availability_states,
-      trend: inCity(m.availability_trend, city),
-      matrix: m.availability_matrix,
-      oos: inCity(m.oos_items, city),
-    })),
-  sellout: (city: CityFilter) => get(`/sellout?city=${city}`, () => ({ units: inCity(m.est_sellout, city), revenue: inCity(m.est_revenue, city) })),
-  price: (city: CityFilter) => get(`/price-discount?city=${city}`, () => ({ trend: inCity(m.price_trend, city), bands: m.discount_bands, dispersion: m.price_dispersion })),
-  search: (city: CityFilter) => get(`/search-rank?city=${city}`, () => ({ ranks: inCity(m.search_rank, city), sos: m.sos_by_keyword, trend: inCity(m.rank_trend, city) })),
-  compare: () => get('/cities/compare', () => m.city_compare),
-  signals: () => get('/signals', () => m.signals),
-  recommendations: () => get('/recommendations', () => m.recommendations),
-  alertRules: () => get('/alert-rules', () => m.alert_rules),
-  reports: () => get('/reports', () => m.reports),
-  runs: () => get('/runs', () => m.capture_runs),
-  datasets: () => get('/datasets', () => m.datasets),
-  quality: () => get('/quality/issues', () => m.quality_issues),
-  chat: async (q: string) =>
-    get('/assistant/chat', () => {
-      const hit = m.assistant_answers.find((a) => a.match.test(q));
-      return hit ?? { text: 'I can answer questions about Blinkit availability, price, search rank and estimated sell-out for Delhi and Mumbai. Try one of the suggestions.', citations: [] as { label: string; query_id: string }[], estimate: false };
+  /** every snapshot, all platforms/cities (filtered client-side by useDataset) */
+  dataset: (): Promise<Dataset> =>
+    get('/snapshots', () => {
+      const snapshots = getSnapshots();
+      const last = snapshots[snapshots.length - 1].scraped_at;
+      const captures = new Set(snapshots.map((s) => s.capture_id));
+      return {
+        snapshots,
+        meta: {
+          captured_at: last,
+          captures_per_day: 3,
+          capture_count: captures.size,
+          first_capture_at: snapshots[0].scraped_at,
+          listings: new Set(snapshots.map((s) => `${s.platform}|${s.city}|${s.product_id}`)).size,
+          products: new Set(snapshots.map((s) => s.product_id)).size,
+        },
+      };
     }),
 };
